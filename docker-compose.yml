@@ -1,0 +1,46 @@
+version: "3"
+services:
+  fastapi:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: localhost:5000/tony/apiserver:v1
+    network_mode: host
+    volumes:
+      - type: bind
+        source: ./src
+        target: /src
+  db:
+    image: postgres
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    network_mode: host
+    environment:
+      - POSTGRES_DB=split
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+  redis:
+    image: redis:latest
+    ports:
+      - target: 6379
+        published: 6379
+  google-sheet:
+    build:
+      context: .
+      dockerfile: ./googlesheetsservice/Dockerfile
+    image: localhost:5000/tony/googlesheetservice:v1
+    stdin_open: true
+    tty: true
+    network_mode: host
+    depends_on:
+      - "redis"
+  sms-service:
+    build:
+      context: .
+      dockerfile: ./twiliosms/Dockerfile
+    image: localhost:5000/tony/twiliosms:v1
+    stdin_open: true
+    tty: true
+    network_mode: host
+    depends_on:
+      - "redis"
